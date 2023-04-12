@@ -9,7 +9,7 @@ import { Web3Provider } from "../context/Web3Context";
 const IndexPage = () => {
   const rawData = useStaticQuery(graphql`
     query ChainsQuery {
-      allChainsJson {
+      allChain {
         nodes {
           id
           name
@@ -29,26 +29,48 @@ const IndexPage = () => {
           }
         }
       }
+      allImageSharp {
+        nodes {
+          id
+          gatsbyImageData(width: 40, placeholder: NONE)
+          parent {
+            id
+            ... on File {
+              id
+              name
+            }
+          }
+        }
+      }
     }
   `);
-  const chains = rawData.allChainsJson.nodes;
+
+  const chains = rawData.allChain.nodes;
+  const icons = rawData.allImageSharp.nodes.reduce((acc, node) => {
+    return {
+      ...acc,
+      [node.parent.name]: node.gatsbyImageData,
+    };
+  }, {});
   const [searchQuery, setSearchQuery] = useState("");
   const filteredChains =
     searchQuery.length > 0
       ? chains.filter(
-        (chain) =>
-          chain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          chain.chainId.toString().includes(searchQuery) ||
-          chain.nativeCurrency.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+          (chain) =>
+            chain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            chain.chainId.toString().includes(searchQuery) ||
+            chain.nativeCurrency.symbol
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())
+        )
       : chains;
 
   return (
     <Web3Provider>
       <Seo />
-      <Box pt="4" px="8">
+      <Box py="4" px="8">
         <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-        <ChainList chains={filteredChains} />
+        <ChainList chains={filteredChains} icons={icons} />
       </Box>
     </Web3Provider>
   );
